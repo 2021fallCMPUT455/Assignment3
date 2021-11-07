@@ -400,12 +400,15 @@ class GoBoard(object):
     def random_policy(self):
         opponent = WHITE + BLACK - self.current_player
         empty_points = self.get_empty_points()
+        made_move_list = []
         random.shuffle(empty_points)
-        i = 0
-        while not self.detect_five_in_a_row() and i < len(empty_points):
-            self.play_move(empty_points[i], self.current_player)
-            i += 1
+        current_move = -1
+        while not self.detect_five_in_a_row() and len(empty_points) != 0:
+            current_move = empty_points[0]
+            self.play_move(current_move, self.current_player)
+            np.delete(empty_points, current_move)
+            made_move_list.append(current_move)
         winner = self.detect_five_in_a_row()
-        self.undo_all_move(empty_points)
-        return winner, empty_points[i]
+        self.undo_all_move(made_move_list)
+        return winner, current_move
 
