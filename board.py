@@ -382,8 +382,10 @@ class GoBoard(object):
         opponent = opponent = WHITE + BLACK - color
         potential_moves = self.get_empty_points().tolist()
         random.shuffle(potential_moves)
+        move_list = 'Random'
         win_rate_dictionary = {}
         for move in potential_moves:
+            move_list += (' ' + str(move))
             self.play_move(move, self.current_player)
             win = 0
             loss = 0
@@ -402,12 +404,13 @@ class GoBoard(object):
         return best_move, win_rate_dictionary
 
     def random_policy(self):
-        opponent = WHITE + BLACK - self.current_player
+        color = self.current_player
+        opponent = WHITE + BLACK - color
         empty_points = self.get_empty_points().tolist()
         made_move_list = []
         random.shuffle(empty_points)
         current_move = 0
-        winner = self.detect_five_in_a_row()
+        winner = EMPTY
         while winner == EMPTY and len(empty_points) != 0:
             current_move = empty_points[0]
             self.play_move(current_move, self.current_player)
@@ -418,3 +421,332 @@ class GoBoard(object):
         self.undo_all_move(made_move_list)
         return winner, current_move
 
+    def analyze_hor(self, point, color):
+
+        y = point % self.NS
+        x = point // self.NS
+
+        y_counter = 0
+
+        right_neighbor = -1
+        left_neighbor = -1
+        for y_marker in range(y, self.NS):
+            color_stone_line = self.get_color(self.pt(x, y_marker))
+            if color_stone_line == color:
+                pass
+            elif color_stone_line == EMPTY:
+                right_neighbor = self.pt(x, y_marker)
+                break
+            else:
+                break
+            y_counter += 1
+        for y_marker in range(y - 1, 0, -1):
+            color_stone_line = self.get_color(self.pt(x, y_marker))
+            if color_stone_line == color:
+                pass
+            elif color_stone_line == EMPTY:
+                left_neighbor = self.pt(x, y_marker)
+                break
+            else:
+                break
+            y_counter += 1
+
+        return left_neighbor, right_neighbor, y_counter
+
+    def analyze_ver(self, point, color):
+        y = point % self.NS
+        x = point // self.NS
+
+        x_counter = 0
+        right_neighbor = -1
+        left_neighbor = -1
+
+        for x_marker in range(x, self.NS):
+            color_stone_line = self.get_color(self.pt(x_marker, y))
+            if color_stone_line == color:
+                pass
+            elif color_stone_line == EMPTY:
+                right_neighbor = self.pt(x_marker, y)
+                break
+            else:
+                break
+            x_counter += 1
+        for x_marker in range(x - 1, 0, -1):
+            color_stone_line = self.get_color(self.pt(x_marker, y))
+            if color_stone_line == color:
+                pass
+            elif color_stone_line == EMPTY:
+                left_neighbor = self.pt(x_marker, y)
+                break
+            else:
+                break
+            x_counter += 1
+
+        return left_neighbor, right_neighbor, x_counter
+
+    def analyze_left_diag(self, point, color):
+        y = point % self.NS
+        x = point // self.NS
+
+        counter = 0
+        right_neighbor = -1
+        left_neighbor = -1
+
+        for x_marker, y_marker in zip(range(x, self.NS), range(y, self.NS)):
+            color_stone_line = self.get_color(self.pt(x_marker, y_marker))
+            if color_stone_line == color:
+                pass
+            elif color_stone_line == EMPTY:
+                right_neighbor = self.pt(x_marker, y_marker)
+                break
+            else:
+                break
+            counter += 1
+
+        for x_marker, y_marker in zip(range(x - 1, 0, -1), range(y - 1, 0,
+                                                                 -1)):
+            color_stone_line = self.get_color(self.pt(x_marker, y_marker))
+            if color_stone_line == color:
+                pass
+            elif color_stone_line == EMPTY:
+                left_neighbor = self.pt(x_marker, y_marker)
+                break
+            else:
+                break
+            counter += 1
+
+        return left_neighbor, right_neighbor, counter
+
+    def analyze_right_diag(self, point, color):
+        y = point % self.NS
+        x = point // self.NS
+
+        counter = 0
+        right_neighbor = -1
+        left_neighbor = -1
+        for x_marker, y_marker in zip(range(x, 0, -1), range(y, self.NS)):
+            color_stone_line = self.get_color(self.pt(x_marker, y_marker))
+            if color_stone_line == color:
+                pass
+            elif color_stone_line == EMPTY:
+                right_neighbor = self.pt(x_marker, y_marker)
+                break
+            else:
+                break
+            counter += 1
+
+        for x_marker, y_marker in zip(range(x + 1, self.NS),
+                                      range(y - 1, 0, -1)):
+            color_stone_line = self.get_color(self.pt(x_marker, y_marker))
+            if color_stone_line == color:
+                pass
+            elif color_stone_line == EMPTY:
+                left_neighbor = self.pt(x_marker, y_marker)
+                break
+            else:
+                break
+            counter += 1
+
+        return left_neighbor, right_neighbor, counter
+
+   
+
+    def mapping_player_heuristic(self, color):
+
+        player_stone_list = [point for point in where1d(self.board == color)]
+        if len(player_stone_list) == 0:
+            player_stone_list = [
+                point for point in where1d(self.board == EMPTY)
+            ]
+
+        potential_move_dict = {}
+
+        for point in player_stone_list:
+            potential_moves = []
+
+            left_neighbor, right_neighbor, counter = self.analyze_hor(
+                point, color)
+
+            potential_moves.append([left_neighbor, counter])
+            potential_moves.append([right_neighbor, counter])
+            left_neighbor, right_neighbor, counter = self.analyze_ver(
+                point, color)
+            potential_moves.append([left_neighbor, counter])
+            potential_moves.append([right_neighbor, counter])
+            left_neighbor, right_neighbor, counter = self.analyze_left_diag(
+                point, color)
+            potential_moves.append([left_neighbor, counter])
+            potential_moves.append([right_neighbor, counter])
+            left_neighbor, right_neighbor, counter = self.analyze_right_diag(
+                point, color)
+            potential_moves.append([left_neighbor, counter])
+            potential_moves.append([right_neighbor, counter])
+
+            for value_pair in potential_moves:
+                if value_pair[0] not in potential_move_dict.keys(
+                ) and value_pair[0] != -1:
+                    potential_move_dict[value_pair[0]] = value_pair[1]
+                elif value_pair[0] in potential_move_dict.keys():
+                    if value_pair[1] > potential_move_dict[value_pair[0]]:
+                        potential_move_dict[value_pair[0]] = value_pair[1]
+
+        #return max(potential_move_dict.items(), key=lambda k : k[1])
+        return potential_move_dict
+
+    def mapping_all_heuristic(self, color):
+        opponent = WHITE + BLACK - color
+
+        player_dict = self.mapping_player_heuristic(color)
+        opponent_dict = self.mapping_player_heuristic(opponent)
+        #player_best_move = max(player_dict, key=lambda k : player_dict[k])
+        #opponent_best_move = max(opponent_dict, key=lambda k : opponent_dict[k])
+
+        player_dict = dict(
+            sorted(player_dict.items(), key=lambda item: item[1]))
+        opponent_dict = dict(
+            sorted(opponent_dict.items(), key=lambda item: item[1]))
+
+        return player_dict, opponent_dict
+
+    def find_all_potential_moves(self, simulation_amount):
+        print(self.current_player)
+        color = self.current_player
+        opponent = opponent = WHITE + BLACK - color
+        potential_moves = self.get_empty_points().tolist()
+        random.shuffle(potential_moves)
+        move_list = 'Random'
+        win_rate_dictionary = {}
+        for move in potential_moves:
+            move_list += (' ' + str(move))
+            #self.play_move(move, self.current_player)
+            self.board[move] = color
+            if self.detect_five_in_a_row() == color:
+                win_rate_dictionary[move] = 1.0
+            else:
+                win = 0
+                loss = 0
+                for n_th in range(simulation_amount):
+                    winner, win_move = self.random_policy(opponent)
+                    
+                    if winner == color:
+                        win += 1
+                    elif winner == opponent:
+                        loss += 1
+                self.board[move] = EMPTY
+                win_rate = win / simulation_amount
+                win_rate_dictionary[move] = win_rate
+        win_rate_dictionary = dict( sorted(win_rate_dictionary.items(),
+                           key=lambda item: item[1],
+                           reverse=True))
+        best_move = max(win_rate_dictionary, key=win_rate_dictionary.get)
+        #self.board[best_move] = color
+        return best_move, win_rate_dictionary[best_move]
+
+    def random_policy(self, opponent):
+        color = opponent
+        empty_points = self.get_empty_points().tolist()
+        made_move_list = []
+        random.shuffle(empty_points)
+        '''
+        current_move = 0
+        winner = EMPTY
+        while winner == EMPTY and len(empty_points) != 0:
+            current_move = empty_points[0]
+            self.play_move(current_move, self.current_player)
+            
+            made_move = empty_points.pop(0)
+            made_move_list.append(made_move)
+            winner = self.detect_five_in_a_row()
+        '''
+        for empty_point in empty_points:
+            #self.play_move(empty_point, self.current_player)
+            self.board[empty_point] = color
+            made_move_list.append(empty_point)
+            winner = self.detect_five_in_a_row()
+            if color == BLACK:
+                color = WHITE
+            elif color == WHITE:
+                color = BLACK
+            if winner != EMPTY:
+                break
+        self.undo_all_move(made_move_list)
+        return winner, empty_point
+
+    def find_move_under_rule(self, simulation_amount):
+        
+        color = self.current_player
+        opponent = opponent = WHITE + BLACK - color
+        potential_moves = self.get_empty_points().tolist()
+        random.shuffle(potential_moves)
+
+        win_str = 'Win'
+        block_win_str = 'BlockWin'
+        open_four_str = 'OpenFour'
+        block_open_four_str = 'BlockOpenFour'
+        random_str = 'Random'
+
+        win_list = []
+        block_win_list = []
+        open_four_list = []
+        block_open_four_list = []
+        random_list = []
+        player_dict, opponent_dict = self.mapping_all_heuristic(color)
+        
+        for key, value in player_dict.items():
+            if value == 4 :
+                win_list.append(key)
+                win_str += (' ' + str(key)) 
+            elif value == 3 :
+                open_four_list.append(key)
+                open_four_str += (' ' + str(key))
+            
+        for key, value in opponent_dict.items():
+            if value == 4 :
+                block_win_list.append(key)
+                block_win_str += (' ' + str(key))
+            elif value == 3 :
+                block_open_four_list.append(key)
+                block_open_four_str += (' ' + str(key))
+            
+        for move in self.get_empty_points().tolist():
+            if move not in win_list and move not in open_four_list and move not in  block_win_list and move not in block_open_four_list:
+                random_list.append(move)
+                random_str += (' ' + str(move))
+        
+        move_priority_list = win_list + block_win_list + open_four_list + block_open_four_list + random_list
+        win_rate_dictionary = {}
+
+        print(win_str)
+        print(block_win_str)
+        print(open_four_str)
+        print(block_open_four_str)
+        print(random_str)
+
+        for move in move_priority_list:
+            print(self.current_player)
+            #self.play_move(move, color)
+            self.board[move] = color
+            current_winner = self.detect_five_in_a_row()
+            print('color: ' + str(color))
+            if current_winner == color:
+                print('5 move: ' + str(move))
+                win_rate_dictionary[move] = 1.0
+                
+            elif current_winner != color:
+                win = 0
+                loss = 0
+                for n_th in range(simulation_amount):
+                    winner, win_move = self.random_policy(color)
+                    
+                    if winner == color:
+                        win += 1
+                    elif winner == opponent:
+                        loss += 1
+                
+                win_rate = win / simulation_amount
+                win_rate_dictionary[move] = win_rate
+            self.board[move] = EMPTY
+        best_move = max(win_rate_dictionary, key=win_rate_dictionary.get)
+        #self.board[best_move] = color
+        print(win_rate_dictionary)
+        return best_move, win_rate_dictionary

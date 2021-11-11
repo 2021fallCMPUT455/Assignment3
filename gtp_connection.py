@@ -297,7 +297,7 @@ class GtpConnection:
             print(best_move, win_rate)
         elif( self.policyType == "rule_based" ):
             print("policytype is rule based")
-
+            best_move, win_rate = self.board.find_move_under_rule(100)
     def gogui_rules_game_id_cmd(self, args):
         self.respond("Gomoku")
 
