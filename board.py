@@ -430,7 +430,7 @@ class GoBoard(object):
 
         right_neighbor = -1
         left_neighbor = -1
-        for y_marker in range(y, self.NS):
+        for y_marker in range(y + 1, self.NS):
             color_stone_line = self.get_color(self.pt(x, y_marker))
             if color_stone_line == color:
                 pass
@@ -451,7 +451,7 @@ class GoBoard(object):
                 break
             y_counter += 1
 
-        return left_neighbor, right_neighbor, y_counter
+        return point, y_counter
 
     def analyze_ver(self, point, color):
         y = point % self.NS
@@ -461,7 +461,7 @@ class GoBoard(object):
         right_neighbor = -1
         left_neighbor = -1
 
-        for x_marker in range(x, self.NS):
+        for x_marker in range(x + 1, self.NS):
             color_stone_line = self.get_color(self.pt(x_marker, y))
             if color_stone_line == color:
                 pass
@@ -482,7 +482,7 @@ class GoBoard(object):
                 break
             x_counter += 1
 
-        return left_neighbor, right_neighbor, x_counter
+        return point, x_counter
 
     def analyze_left_diag(self, point, color):
         y = point % self.NS
@@ -492,7 +492,7 @@ class GoBoard(object):
         right_neighbor = -1
         left_neighbor = -1
 
-        for x_marker, y_marker in zip(range(x, self.NS), range(y, self.NS)):
+        for x_marker, y_marker in zip(range(x + 1, self.NS), range(y + 1, self.NS)):
             color_stone_line = self.get_color(self.pt(x_marker, y_marker))
             if color_stone_line == color:
                 pass
@@ -515,7 +515,7 @@ class GoBoard(object):
                 break
             counter += 1
 
-        return left_neighbor, right_neighbor, counter
+        return point, counter
 
     def analyze_right_diag(self, point, color):
         y = point % self.NS
@@ -524,7 +524,7 @@ class GoBoard(object):
         counter = 0
         right_neighbor = -1
         left_neighbor = -1
-        for x_marker, y_marker in zip(range(x, 0, -1), range(y, self.NS)):
+        for x_marker, y_marker in zip(range(x - 1, 0, -1), range(y + 1, self.NS)):
             color_stone_line = self.get_color(self.pt(x_marker, y_marker))
             if color_stone_line == color:
                 pass
@@ -547,40 +547,42 @@ class GoBoard(object):
                 break
             counter += 1
 
-        return left_neighbor, right_neighbor, counter
+        return point, counter
 
    
 
     def mapping_player_heuristic(self, color):
-
+        '''
         player_stone_list = [point for point in where1d(self.board == color)]
         if len(player_stone_list) == 0:
             player_stone_list = [
                 point for point in where1d(self.board == EMPTY)
             ]
+        '''
+        player_stone_list = [point for point in where1d(self.board == EMPTY)]
 
         potential_move_dict = {}
 
         for point in player_stone_list:
             potential_moves = []
 
-            left_neighbor, right_neighbor, counter = self.analyze_hor(
+            point, counter = self.analyze_hor(
                 point, color)
 
-            potential_moves.append([left_neighbor, counter])
-            potential_moves.append([right_neighbor, counter])
-            left_neighbor, right_neighbor, counter = self.analyze_ver(
+            
+            potential_moves.append([point, counter])
+            point, counter = self.analyze_ver(
                 point, color)
-            potential_moves.append([left_neighbor, counter])
-            potential_moves.append([right_neighbor, counter])
-            left_neighbor, right_neighbor, counter = self.analyze_left_diag(
+            
+            potential_moves.append([point, counter])
+            point, counter = self.analyze_left_diag(
                 point, color)
-            potential_moves.append([left_neighbor, counter])
-            potential_moves.append([right_neighbor, counter])
-            left_neighbor, right_neighbor, counter = self.analyze_right_diag(
+            
+            potential_moves.append([point, counter])
+            point, counter = self.analyze_right_diag(
                 point, color)
-            potential_moves.append([left_neighbor, counter])
-            potential_moves.append([right_neighbor, counter])
+            
+            potential_moves.append([point, counter])
 
             for value_pair in potential_moves:
                 if value_pair[0] not in potential_move_dict.keys(
@@ -609,7 +611,7 @@ class GoBoard(object):
         return player_dict, opponent_dict
 
     def find_all_potential_moves(self, simulation_amount):
-        print(self.current_player)
+        
         color = self.current_player
         opponent = opponent = WHITE + BLACK - color
         potential_moves = self.get_empty_points().tolist()
@@ -632,13 +634,15 @@ class GoBoard(object):
                         win += 1
                     elif winner == opponent:
                         loss += 1
-                self.board[move] = EMPTY
+                #self.board[move] = EMPTY
                 win_rate = win / simulation_amount
                 win_rate_dictionary[move] = win_rate
+            self.board[move] = EMPTY
         win_rate_dictionary = dict( sorted(win_rate_dictionary.items(),
                            key=lambda item: item[1],
                            reverse=True))
         best_move = max(win_rate_dictionary, key=win_rate_dictionary.get)
+        print(win_rate_dictionary)
         #self.board[best_move] = color
         return best_move, win_rate_dictionary[best_move]
 
@@ -668,6 +672,7 @@ class GoBoard(object):
             elif color == WHITE:
                 color = BLACK
             if winner != EMPTY:
+                self.undo_all_move(made_move_list)
                 break
         self.undo_all_move(made_move_list)
         return winner, empty_point
@@ -691,6 +696,7 @@ class GoBoard(object):
         block_open_four_list = []
         random_list = []
         player_dict, opponent_dict = self.mapping_all_heuristic(color)
+        
         
         for key, value in player_dict.items():
             if value == 4 :
@@ -723,13 +729,13 @@ class GoBoard(object):
         print(random_str)
 
         for move in move_priority_list:
-            print(self.current_player)
+           
             #self.play_move(move, color)
             self.board[move] = color
             current_winner = self.detect_five_in_a_row()
-            print('color: ' + str(color))
+            
             if current_winner == color:
-                print('5 move: ' + str(move))
+                
                 win_rate_dictionary[move] = 1.0
                 
             elif current_winner != color:
@@ -748,5 +754,5 @@ class GoBoard(object):
             self.board[move] = EMPTY
         best_move = max(win_rate_dictionary, key=win_rate_dictionary.get)
         #self.board[best_move] = color
-        print(win_rate_dictionary)
-        return best_move, win_rate_dictionary
+        
+        return best_move, win_rate_dictionary[best_move]
