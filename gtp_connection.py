@@ -1,7 +1,6 @@
 """
 gtp_connection.py
 Module for playing games of Go using GoTextProtocol
-
 Parts of this code were originally based on the gtp module 
 in the Deep-Go project by Isaac Henrion and Amos Storkey 
 at the University of Edinburgh.
@@ -26,7 +25,6 @@ class GtpConnection:
     def __init__(self, go_engine, board, debug_mode=False):
         """
         Manage a GTP connection for a Go-playing engine
-
         Parameters
         ----------
         go_engine:
@@ -37,7 +35,6 @@ class GtpConnection:
         self._debug_mode = debug_mode
         self.go_engine = go_engine
         self.board = board
-        self.policyType = ""
         self.commands = {
             "protocol_version": self.protocol_version_cmd,
             "quit": self.quit_cmd,
@@ -61,7 +58,8 @@ class GtpConnection:
             "gogui-analyze_commands": self.gogui_analyze_cmd,
             "policy":self.policy_cmd,
             "policy_moves":self.policy_moves_cmd,
-            "genmove":self.genmove_cmd
+            
+
         }
 
         # used for argument checking
@@ -75,6 +73,7 @@ class GtpConnection:
             "policy": (1, "Usage: policy {random,rule_based"),
             "play": (2, "Usage: play {b,w} MOVE"),
             "legal_moves": (1, "Usage: legal_moves {w,b}"),
+
         }
 
     def write(self, data):
@@ -259,23 +258,42 @@ class GtpConnection:
         """
         Generate a move for the color args[0] in {'b', 'w'}, for the game of gomoku.
         """
-        result = self.board.detect_five_in_a_row()
-        if result == GoBoardUtil.opponent(self.board.current_player):
-            self.respond("resign")
-            return
-        if self.board.get_empty_points().size == 0:
-            self.respond("pass")
-            return
+        
+        # Grab color
         board_color = args[0].lower()
         color = color_to_int(board_color)
-        move = self.go_engine.get_move(self.board, color)
-        move_coord = point_to_coord(move, self.board.size)
+        # Get best move
+        best_move, win_rate = self.board.find_move_under_rule(100)
+
+        # Play new move
+        move_coord = point_to_coord(best_move, self.board.size)
         move_as_string = format_point(move_coord)
-        if self.board.is_legal(move, color):
-            self.board.play_move(move, color)
+        if self.board.is_legal(best_move, color):
+            self.board.play_move(best_move, color)
             self.respond(move_as_string.lower())
         else:
             self.respond("Illegal move: {}".format(move_as_string))
+
+        # result = self.board.detect_five_in_a_row()
+        # if result == GoBoardUtil.opponent(self.board.current_player):
+        #     self.respond("resign")
+        #     return
+        # if self.board.get_empty_points().size == 0:
+        #     self.respond("pass")
+        #     return
+        # board_color = args[0].lower()
+        # color = color_to_int(board_color)
+        # move = self.go_engine.get_move(self.board, color)
+        # print(move)
+        # move_coord = point_to_coord(move, self.board.size)
+        # print(move_coord)
+        # move_as_string = format_point(move_coord)
+        # print(move_as_string)
+        # if self.board.is_legal(move, color):
+        #     self.board.play_move(move, color)
+        #     self.respond(move_as_string.lower())
+        # else:
+        #     self.respond("Illegal move: {}".format(move_as_string))
 
     def policy_cmd(self, args):
         print("policy command")
@@ -292,9 +310,11 @@ class GtpConnection:
         print("policy moves command")
         if( self.policyType == "random" ):
             print("policytype is random")
+            best_move, win_rate = self.board.find_all_potential_moves(100)
+            print(best_move, win_rate)
         elif( self.policyType == "rule_based" ):
             print("policytype is rule based")
-
+            best_move, win_rate = self.board.find_move_under_rule(100)
     def gogui_rules_game_id_cmd(self, args):
         self.respond("Gomoku")
 
