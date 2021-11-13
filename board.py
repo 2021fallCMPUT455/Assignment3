@@ -375,7 +375,7 @@ class GoBoard(object):
     def undo_all_move(self, point_list):
         for point in point_list:
             self.board[point] = EMPTY
-
+    '''
     def find_all_potential_moves(self, simulation_amount):
         print(self.current_player)
         color = self.current_player
@@ -420,9 +420,9 @@ class GoBoard(object):
             winner = self.detect_five_in_a_row()
         self.undo_all_move(made_move_list)
         return winner, current_move
-
+    '''
     def analyze_hor(self, point, color):
-
+        opponent = WHITE + BLACK - color
         y = point % self.NS
         x = point // self.NS
 
@@ -430,27 +430,52 @@ class GoBoard(object):
 
         right_neighbor = -1
         left_neighbor = -1
+        dead_line = 0
+        one_side_color = 0
+        two_side_color = 0
+        has_empty_end = 0
+        
+
         for y_marker in range(y + 1, self.NS):
             color_stone_line = self.get_color(self.pt(x, y_marker))
             if color_stone_line == color:
                 pass
             elif color_stone_line == EMPTY:
                 right_neighbor = self.pt(x, y_marker)
+                has_empty_end += 1
                 break
             else:
+                dead_line += 1
                 break
             y_counter += 1
+
+        if y_counter != 0:
+            one_side_color += y_counter
+
         for y_marker in range(y - 1, 0, -1):
             color_stone_line = self.get_color(self.pt(x, y_marker))
             if color_stone_line == color:
                 pass
             elif color_stone_line == EMPTY:
                 left_neighbor = self.pt(x, y_marker)
+                has_empty_end += 1
                 break
             else:
+                dead_line += 1
                 break
             y_counter += 1
-
+        '''
+        two_side_color += y_counter
+        if two_side_color > one_side_color:
+            # Then, this is a empty point in the middle of a line.
+            if dead_line == 2 and y_counter < 4:
+                y_counter = 0
+        else:
+            if dead_line == 1 and y_counter < 4:
+                y_counter = 0
+        '''
+        if has_empty_end == 0 and y_counter < 4:
+            y_counter = 0
         return point, y_counter
 
     def analyze_ver(self, point, color):
@@ -460,6 +485,10 @@ class GoBoard(object):
         x_counter = 0
         right_neighbor = -1
         left_neighbor = -1
+        dead_line = 0
+        one_side_color = 0
+        two_side_color = 0
+        has_empty_end = 0
 
         for x_marker in range(x + 1, self.NS):
             color_stone_line = self.get_color(self.pt(x_marker, y))
@@ -467,21 +496,40 @@ class GoBoard(object):
                 pass
             elif color_stone_line == EMPTY:
                 right_neighbor = self.pt(x_marker, y)
+                has_empty_end += 1
                 break
             else:
+                dead_line += 1
                 break
             x_counter += 1
+        
+        if x_counter > 0:
+            one_side_color += x_counter
+
         for x_marker in range(x - 1, 0, -1):
             color_stone_line = self.get_color(self.pt(x_marker, y))
             if color_stone_line == color:
                 pass
             elif color_stone_line == EMPTY:
                 left_neighbor = self.pt(x_marker, y)
+                has_empty_end += 1
                 break
             else:
+                dead_line += 1
                 break
             x_counter += 1
-
+        '''
+        two_side_color += x_counter
+        if two_side_color > one_side_color:
+            # Then, this is a empty point in the middle of a line.
+            if dead_line == 2 and x_counter < 4:
+                x_counter = 0
+        else:
+            if dead_line == 1 and x_counter < 4:
+                x_counter = 0
+        '''
+        if has_empty_end == 0 and x_counter < 4:
+            x_counter = 0
         return point, x_counter
 
     def analyze_left_diag(self, point, color):
@@ -491,6 +539,10 @@ class GoBoard(object):
         counter = 0
         right_neighbor = -1
         left_neighbor = -1
+        dead_line = 0
+        one_side_color = 0
+        two_side_color = 0
+        has_empty_end = 0
 
         for x_marker, y_marker in zip(range(x + 1, self.NS), range(y + 1, self.NS)):
             color_stone_line = self.get_color(self.pt(x_marker, y_marker))
@@ -498,10 +550,15 @@ class GoBoard(object):
                 pass
             elif color_stone_line == EMPTY:
                 right_neighbor = self.pt(x_marker, y_marker)
+                has_empty_end += 1
                 break
             else:
+                dead_line += 1
                 break
             counter += 1
+
+        if counter > 0:
+            one_side_color += counter
 
         for x_marker, y_marker in zip(range(x - 1, 0, -1), range(y - 1, 0,
                                                                  -1)):
@@ -510,11 +567,24 @@ class GoBoard(object):
                 pass
             elif color_stone_line == EMPTY:
                 left_neighbor = self.pt(x_marker, y_marker)
+                has_empty_end += 1
                 break
             else:
+                dead_line += 1
                 break
             counter += 1
-
+        '''
+        two_side_color += counter
+        if two_side_color > one_side_color:
+            # Then, this is a empty point in the middle of a line.
+            if dead_line == 2 and counter < 4:
+                counter = 0
+        else:
+            if dead_line == 1 and counter < 4:
+                counter = 0
+        '''
+        if has_empty_end == 0 and counter < 4:
+            counter = 0
         return point, counter
 
     def analyze_right_diag(self, point, color):
@@ -524,16 +594,26 @@ class GoBoard(object):
         counter = 0
         right_neighbor = -1
         left_neighbor = -1
+        dead_line = 0
+        one_side_color = 0
+        two_side_color = 0
+        has_empty_end = 0
+
         for x_marker, y_marker in zip(range(x - 1, 0, -1), range(y + 1, self.NS)):
             color_stone_line = self.get_color(self.pt(x_marker, y_marker))
             if color_stone_line == color:
                 pass
             elif color_stone_line == EMPTY:
                 right_neighbor = self.pt(x_marker, y_marker)
+                has_empty_end += 1
                 break
             else:
+                dead_line += 1
                 break
             counter += 1
+
+        if counter > 0:
+            one_side_color += counter
 
         for x_marker, y_marker in zip(range(x + 1, self.NS),
                                       range(y - 1, 0, -1)):
@@ -542,11 +622,24 @@ class GoBoard(object):
                 pass
             elif color_stone_line == EMPTY:
                 left_neighbor = self.pt(x_marker, y_marker)
+                has_empty_end += 1
                 break
             else:
+                dead_line += 1
                 break
             counter += 1
-
+        '''
+        two_side_color += counter
+        if two_side_color > one_side_color:
+            # Then, this is a empty point in the middle of a line.
+            if dead_line == 2 and counter < 4:
+                counter = 0
+        else:
+            if dead_line == 1 and counter < 4:
+                counter = 0
+        '''
+        if has_empty_end == 0 and counter < 4:
+            counter =0
         return point, counter
 
    
@@ -628,7 +721,7 @@ class GoBoard(object):
                 win = 0
                 loss = 0
                 for n_th in range(simulation_amount):
-                    winner, win_move = self.random_policy(opponent)
+                    winner = self.random_policy(opponent)
                     
                     if winner == color:
                         win += 1
@@ -662,6 +755,7 @@ class GoBoard(object):
             made_move_list.append(made_move)
             winner = self.detect_five_in_a_row()
         '''
+        winner = self.detect_five_in_a_row()
         for empty_point in empty_points:
             #self.play_move(empty_point, self.current_player)
             self.board[empty_point] = color
@@ -675,7 +769,7 @@ class GoBoard(object):
                 self.undo_all_move(made_move_list)
                 break
         self.undo_all_move(made_move_list)
-        return winner, empty_point
+        return winner
 
     def find_move_under_rule(self, simulation_amount):
         
@@ -727,7 +821,7 @@ class GoBoard(object):
         print(open_four_str)
         print(block_open_four_str)
         print(random_str)
-
+        '''
         for move in move_priority_list:
            
             #self.play_move(move, color)
@@ -742,7 +836,7 @@ class GoBoard(object):
                 win = 0
                 loss = 0
                 for n_th in range(simulation_amount):
-                    winner, win_move = self.random_policy(color)
+                    winner = self.random_policy(color)
                     
                     if winner == color:
                         win += 1
@@ -756,3 +850,4 @@ class GoBoard(object):
         #self.board[best_move] = color
         
         return best_move, win_rate_dictionary[best_move]
+        '''
