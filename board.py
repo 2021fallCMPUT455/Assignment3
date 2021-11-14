@@ -702,7 +702,334 @@ class GoBoard(object):
             sorted(opponent_dict.items(), key=lambda item: item[1]))
 
         return player_dict, opponent_dict
+    def opponent_analyze_hor(self, point, color):
+        opponent = WHITE + BLACK - color
+        y = point % self.NS
+        x = point // self.NS
 
+        y_counter = 0
+
+        right_neighbor = -1
+        left_neighbor = -1
+        dead_line = 0
+        one_side_color = 0
+        two_side_color = 0
+        has_empty_end = 0
+        
+        open_four_left = 0
+        open_four_right = 0
+
+        in_middle_line = 0
+
+        for y_marker in range(y + 1, self.NS):
+            color_stone_line = self.get_color(self.pt(x, y_marker))
+            if color_stone_line == color:
+                y_counter += 1
+            elif color_stone_line == EMPTY:
+                right_neighbor = self.pt(x, y_marker)
+                open_four_left += 1
+                has_empty_end += 1
+                if open_four_left == 2:
+                    break
+            else:
+                dead_line += 1
+                break
+            
+
+        if y_counter != 0:
+            one_side_color += y_counter
+
+        for y_marker in range(y - 1, 0, -1):
+            color_stone_line = self.get_color(self.pt(x, y_marker))
+            if color_stone_line == color:
+                y_counter += 1
+                
+            elif color_stone_line == EMPTY:
+                left_neighbor = self.pt(x, y_marker)
+                open_four_right += 1
+                has_empty_end += 1
+                if open_four_right == 2:
+                    break
+            else:
+                dead_line += 1
+                break
+            
+     
+        two_side_color += y_counter
+        if two_side_color > one_side_color:
+            in_middle_line += 1
+        if in_middle_line == 0:
+            if y_counter == 4 and ((open_four_left + open_four_right) != 0):
+                y_counter = 0
+
+        
+        return point, y_counter
+
+    def opponent_analyze_ver(self, point, color):
+        y = point % self.NS
+        x = point // self.NS
+
+        counter = 0
+
+
+        in_middle_line = 0
+
+        walk_left = []
+        walk_right = []
+
+
+        for x_marker in range(x + 1, self.NS):
+            color_stone_line = self.get_color(self.pt(x_marker, y))
+            if color_stone_line == color or color_stone_line == EMPTY:
+                walk_left.append(color_stone_line)
+            else:
+                break
+            
+            
+        
+        start_walk_left = -1
+        end_walk_left = -1
+
+        for i in range(len(walk_left)):
+            if walk_left[i] == color and start_walk_left == -1:
+                start_walk_left = i
+                if i > 1 and walk_left[i] != color and len(walk_left) == 5:
+                    start_walk_left = -1
+                
+            if start_walk_left != -1 and walk_left[i] == EMPTY:
+                end_walk_left = i - 1
+                break
+        if start_walk_left > 1 and end_walk_left > 4:
+            start_walk_left = -1
+            end_walk_left = -1
+            print('check1')
+            
+        if start_walk_left != -1 and end_walk_left == -1:
+            end_walk_left = i
+        stone_amount_left = end_walk_left - start_walk_left          
+
+        for x_marker in range(x - 1, 0, -1):
+            color_stone_line = self.get_color(self.pt(x_marker, y))
+            if color_stone_line == color or color_stone_line == EMPTY:
+                walk_right.append(color_stone_line)
+            else:
+                break
+            
+            
+            
+        start_walk_right = -1
+        end_walk_right = -1
+
+        for i in range(len(walk_right)):
+            if walk_right[i] == color and start_walk_right == -1:
+                start_walk_right = i
+                
+                
+            if start_walk_right != -1 and walk_right[i] == EMPTY:
+                end_walk_right = i - 1
+                break
+
+        if start_walk_right > 1 and end_walk_right > 4:
+            start_walk_right = -1
+            end_walk_right = -1
+            print('check2')
+            
+        if start_walk_right != -1 and end_walk_right == -1:
+            end_walk_right = i
+        stone_amount_right = end_walk_right - start_walk_right
+        
+        if len(walk_left) != 0 and len(walk_right) != 0:
+            if walk_left[0] == color and walk_right[0] == color:
+                stone_amount_middle = stone_amount_left + stone_amount_right
+                return point, max([stone_amount_left, stone_amount_middle, stone_amount_right]) + 1
+        
+        
+        return point, max([stone_amount_left, stone_amount_right]) + 1
+
+    def opponent_analyze_left_diag(self, point, color):
+        y = point % self.NS
+        x = point // self.NS
+
+        counter = 0
+        right_neighbor = -1
+        left_neighbor = -1
+        dead_line = 0
+        one_side_color = 0
+        two_side_color = 0
+        has_empty_end = 0
+
+        open_four_left = 0
+        open_four_right = 0
+
+        in_middle_line = 0
+
+        for x_marker, y_marker in zip(range(x + 1, self.NS), range(y + 1, self.NS)):
+            color_stone_line = self.get_color(self.pt(x_marker, y_marker))
+            if color_stone_line == color:
+                counter += 1
+                
+            elif color_stone_line == EMPTY:
+                right_neighbor = self.pt(x_marker, y_marker)
+                open_four_left += 1
+                has_empty_end += 1
+                if open_four_left == 2:
+                    break
+            else:
+                dead_line += 1
+                break
+            
+
+        if counter > 0:
+            one_side_color += counter
+
+        for x_marker, y_marker in zip(range(x - 1, 0, -1), range(y - 1, 0,
+                                                                 -1)):
+            color_stone_line = self.get_color(self.pt(x_marker, y_marker))
+            if color_stone_line == color:
+                counter += 1
+                
+            elif color_stone_line == EMPTY:
+                left_neighbor = self.pt(x_marker, y_marker)
+                open_four_right += 1
+                has_empty_end += 1
+                if open_four_right == 2:
+                    break
+            else:
+                dead_line += 1
+                break
+            
+      
+        two_side_color += counter
+        if two_side_color > one_side_color:
+            in_middle_line += 1
+        if in_middle_line == 0:
+            if counter == 4 and (open_four_left + open_four_right != 0):
+                counter = 0
+        
+        
+
+        return point, counter
+
+    def opponent_analyze_right_diag(self, point, color):
+        y = point % self.NS
+        x = point // self.NS
+
+        counter = 0
+        right_neighbor = -1
+        left_neighbor = -1
+        dead_line = 0
+        one_side_color = 0
+        two_side_color = 0
+        has_empty_end = 0
+
+        open_four_left = 0
+        open_four_right = 0
+
+        in_middle_line = 0
+
+        for x_marker, y_marker in zip(range(x - 1, 0, -1), range(y + 1, self.NS)):
+            color_stone_line = self.get_color(self.pt(x_marker, y_marker))
+            if color_stone_line == color:
+                counter += 1
+               
+            elif color_stone_line == EMPTY:
+                right_neighbor = self.pt(x_marker, y_marker)
+                open_four_left += 1
+                has_empty_end += 1
+                if open_four_left == 2:
+                    break
+            else:
+                dead_line += 1
+                break
+            
+
+        if counter > 0:
+            one_side_color += counter
+
+        for x_marker, y_marker in zip(range(x + 1, self.NS),
+                                      range(y - 1, 0, -1)):
+            color_stone_line = self.get_color(self.pt(x_marker, y_marker))
+            if color_stone_line == color:
+                counter += 1
+                
+            elif color_stone_line == EMPTY:
+                left_neighbor = self.pt(x_marker, y_marker)
+                open_four_right += 1
+                has_empty_end += 1
+                if open_four_right == 2:
+                    break
+            else:
+                dead_line += 1
+                break
+        
+        two_side_color += counter
+        if two_side_color > one_side_color:
+            in_middle_line += 1
+        if in_middle_line == 0:
+            if counter == 4 and (open_four_left + open_four_right != 0):
+                counter = 0
+        
+        
+
+        return point, counter
+
+    def mapping_opponent_heuristic(self, color):
+        '''
+        player_stone_list = [point for point in where1d(self.board == color)]
+        if len(player_stone_list) == 0:
+            player_stone_list = [
+                point for point in where1d(self.board == EMPTY)
+            ]
+        '''
+        player_stone_list = [point for point in where1d(self.board == EMPTY)]
+
+        potential_move_dict = {}
+
+        for point in player_stone_list:
+            potential_moves = []
+
+            point, counter = self.opponent_analyze_hor(
+                point, color)
+
+            
+            potential_moves.append([point, counter])
+            point, counter = self.opponent_analyze_ver(
+                point, color)
+            
+            potential_moves.append([point, counter])
+            point, counter = self.opponent_analyze_left_diag(
+                point, color)
+            
+            potential_moves.append([point, counter])
+            point, counter = self.opponent_analyze_right_diag(
+                point, color)
+            
+            potential_moves.append([point, counter])
+
+            for value_pair in potential_moves:
+                if value_pair[0] not in potential_move_dict.keys(
+                ) and value_pair[0] != -1:
+                    potential_move_dict[value_pair[0]] = value_pair[1]
+                elif value_pair[0] in potential_move_dict.keys():
+                    if value_pair[1] > potential_move_dict[value_pair[0]]:
+                        potential_move_dict[value_pair[0]] = value_pair[1]
+
+        #return max(potential_move_dict.items(), key=lambda k : k[1])
+        return potential_move_dict
+
+    def opponent_mapping_all_heuristic(self, color):
+        opponent = WHITE + BLACK - color
+
+        
+        opponent_dict = self.mapping_opponent_heuristic(opponent)
+        #player_best_move = max(player_dict, key=lambda k : player_dict[k])
+        #opponent_best_move = max(opponent_dict, key=lambda k : opponent_dict[k])
+
+        
+        opponent_dict = dict(
+            sorted(opponent_dict.items(), key=lambda item: item[1]))
+
+        return opponent_dict
     def find_all_potential_moves(self, simulation_amount):
         
         color = self.current_player
@@ -717,6 +1044,8 @@ class GoBoard(object):
             self.board[move] = color
             if self.detect_five_in_a_row() == color:
                 win_rate_dictionary[move] = 1.0
+            elif len(self.get_empty_points().tolist()) == 0:
+                win_rate_dictionary[move] = 0
             else:
                 win = 0
                 loss = 0
@@ -789,7 +1118,8 @@ class GoBoard(object):
         open_four_list = []
         block_open_four_list = []
         random_list = []
-        player_dict, opponent_dict = self.mapping_all_heuristic(color)
+        player_dict, _ = self.mapping_all_heuristic(color)
+        opponent_dict = self.opponent_mapping_all_heuristic(color)
         
         
         for key, value in player_dict.items():
@@ -821,33 +1151,6 @@ class GoBoard(object):
         print(open_four_str)
         print(block_open_four_str)
         print(random_str)
-        '''
-        for move in move_priority_list:
-           
-            #self.play_move(move, color)
-            self.board[move] = color
-            current_winner = self.detect_five_in_a_row()
-            
-            if current_winner == color:
-                
-                win_rate_dictionary[move] = 1.0
-                
-            elif current_winner != color:
-                win = 0
-                loss = 0
-                for n_th in range(simulation_amount):
-                    winner = self.random_policy(color)
-                    
-                    if winner == color:
-                        win += 1
-                    elif winner == opponent:
-                        loss += 1
-                
-                win_rate = win / simulation_amount
-                win_rate_dictionary[move] = win_rate
-            self.board[move] = EMPTY
-        best_move = max(win_rate_dictionary, key=win_rate_dictionary.get)
-        #self.board[best_move] = color
         
-        return best_move, win_rate_dictionary[best_move]
-        '''
+
+    
