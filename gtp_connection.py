@@ -1,4 +1,41 @@
+
+elif( self.policyType == "rule_based" ):
+            # self.respond("ddd")
+            # print("policytype is rule based")
+            win_str, block_win_str, open_four_str, block_open_four_str, random_str = self.board.find_move_under_rule(100)
+            for moves in (win_str, block_win_str, open_four_str, block_open_four_str, random_str):
+                print(moves)
+                x = re.split('\s+', moves)
+                if len(x) >= 2:
+                    allAns = ""
+                    
+                    for y in x:
+                        if y == "Win":
+                            allAns + str(y)
+                        else:
+                            best_move_coord = point_to_coord(int(y), self.board.size)
+                            move_as_string = format_point(best_move_coord)
+                            allAns + " " + move_as_string
+                    self.respond(allAns)
+                    break
+                            
+                    # if x[0] == "Win":
+                        # best_move_coord1 = point_to_coord(int(x[1]), self.board.size)
+                        # move_as_string1 = format_point(best_move_coord1)
+                        # best_move_coord2 = point_to_coord(int(x[2]), self.board.size)
+                        # move_as_string2 = format_point(best_move_coord2)
+                        # self.respond(x[0] + " " + move_as_string1 + " "+ move_as_string2)
+                        # break
+                    else:
+
+                        best_move_coord = point_to_coord(int(x[1]), self.board.size)
+                        move_as_string = format_point(best_move_coord)
+                        # print(best_move_coord)
+                        self.respond(x[0] + " " + move_as_string)
+                        break
+
 """
+
 gtp_connection.py
 Module for playing games of Go using GoTextProtocol
 Parts of this code were originally based on the gtp module 
