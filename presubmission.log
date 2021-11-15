@@ -1,0 +1,14 @@
+Script started on Sun Nov 14 19:53:18 2021
+
+The default interactive shell is now zsh.
+To update your account to use zsh, please run `chsh -s /bin/zsh`.
+For more details, please visit https://support.apple.com/kb/HT208050.
+[?1034hbash-3.2$ export PATH=$PATH:/Users/moumou/Documents/cmput455/gogui-1.5.1/bin
+bash-3.2$ gogui-regress ./Gomoku.py assignment2-public-tests.gtp
+File not found: assignment2-public-tests.gtp
+bash-3.2$ gogui-regress ./Gomoku.py assignment2-public-tests.gtp[1P-public-tests.gtp3-public-tests.gtp
+120 unexpected FAIL: Correct 'BlockOpenFour D1 D5 D6', got 'BlockOpenFour D5'
+bash-3.2$ exit
+exit
+
+Script done on Sun Nov 14 19:53:52 2021
